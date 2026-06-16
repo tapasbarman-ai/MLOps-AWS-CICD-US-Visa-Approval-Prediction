@@ -1,24 +1,29 @@
-# below code is to check the logging config
-# from us_visa.logger import logging
+import os
+import sys
 
-# logging.info("This is to test the logging config")
+# Load environment variables from .env
+def load_env():
+    env_path = ".env"
+    if os.path.exists(env_path):
+        with open(env_path, "r") as f:
+            for line in f:
+                if "=" in line and not line.strip().startswith("#"):
+                    key, val = line.split("=", 1)
+                    os.environ[key.strip()] = val.strip().strip('"').strip("'")
+                    print(f"Loaded env var: {key.strip()}")
 
-# --------------------------------------------------------------------------------
+load_env()
 
-# below code is to check the exception config
-# from us_visa.logger import logging
-# from us_visa.exception import USvisaException
-# import sys
+from us_visa.pipline.training_pipeline import TrainPipeline
 
-# try:
-#     a = 1+'Z'
-# except Exception as e:
-#     logging.info(e)
-#     raise USvisaException(e, sys) from e
-
-# --------------------------------------------------------------------------------
-
-# from us_visa.pipline.training_pipeline import TrainPipeline
-
-# pipline = TrainPipeline()
-# pipline.run_pipeline()
+try:
+    print("Initializing training pipeline...")
+    pipeline = TrainPipeline()
+    print("Running training pipeline...")
+    pipeline.run_pipeline()
+    print("SUCCESS: Pipeline executed successfully!")
+except Exception as e:
+    print(f"ERROR: Pipeline execution failed: {e}")
+    import traceback
+    traceback.print_exc()
+    sys.exit(1)

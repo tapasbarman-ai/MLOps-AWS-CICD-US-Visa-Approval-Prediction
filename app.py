@@ -1,3 +1,5 @@
+import os
+import sys
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
@@ -7,6 +9,19 @@ from starlette.responses import HTMLResponse, RedirectResponse
 from uvicorn import run as app_run
 
 from typing import Optional
+
+# Load environment variables from .env
+def load_env():
+    env_path = ".env"
+    if os.path.exists(env_path):
+        with open(env_path, "r") as f:
+            for line in f:
+                if "=" in line and not line.strip().startswith("#"):
+                    key, val = line.split("=", 1)
+                    os.environ[key.strip()] = val.strip().strip('"').strip("'")
+                    print(f"Loaded env var: {key.strip()}")
+
+load_env()
 
 from us_visa.constants import APP_HOST, APP_PORT
 from us_visa.pipline.prediction_pipeline import USvisaData, USvisaClassifier

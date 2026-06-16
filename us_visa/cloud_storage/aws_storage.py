@@ -20,6 +20,9 @@ class SimpleStorageService:
 
     def s3_key_path_available(self,bucket_name,s3_key)->bool:
         try:
+            if self.s3_resource is None:
+                local_path = os.path.join("local_storage", bucket_name, s3_key)
+                return os.path.exists(local_path)
             bucket = self.get_bucket(bucket_name)
             file_objects = [file_object for file_object in bucket.objects.filter(Prefix=s3_key)]
             if len(file_objects) > 0:
@@ -126,6 +129,13 @@ class SimpleStorageService:
                 else model_dir + "/" + model_name
             )
             model_file = func()
+            if self.s3_resource is None:
+                local_path = os.path.join("local_storage", bucket_name, model_file)
+                logging.info(f"Local fallback: Loading model from {local_path}")
+                with open(local_path, "rb") as f:
+                    model = pickle.load(f)
+                logging.info("Exited the load_model method of S3Operations class")
+                return model
             file_object = self.get_file_object(model_file, bucket_name)
             model_obj = self.read_object(file_object, decode=False)
             model = pickle.loads(model_obj)
@@ -176,6 +186,17 @@ class SimpleStorageService:
             logging.info(
                 f"Uploading {from_filename} file to {to_filename} file in {bucket_name} bucket"
             )
+
+            if self.s3_resource is None:
+                local_path = os.path.join("local_storage", bucket_name, to_filename)
+                logging.info(f"Local fallback: Copying {from_filename} to local storage path {local_path}")
+                os.makedirs(os.path.dirname(local_path), exist_ok=True)
+                import shutil
+                shutil.copy(from_filename, local_path)
+                if remove is True:
+                    os.remove(from_filename)
+                logging.info("Exited the upload_file method of S3Operations class")
+                return
 
             self.s3_resource.meta.client.upload_file(
                 from_filename, bucket_name, to_filename
